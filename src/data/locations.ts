@@ -1,0 +1,68 @@
+import type { Location } from "../types"
+
+export const locations: Location[] = [
+  {
+    id: 1,
+    naam: "R26/B1.12",
+    type: "Collegezaal",
+    verdieping: "1e verdieping",
+    capaciteit: 60,
+    beschikbaar: true,
+  },
+  {
+    id: 2,
+    naam: "R26/B2.8",
+    type: "Practicum PC",
+    verdieping: "2e verdieping",
+    capaciteit: 30,
+    beschikbaar: false,
+  },
+  {
+    id: 3,
+    naam: "R26/B1.1",
+    type: "Collegezaal",
+    verdieping: "1e verdieping",
+    capaciteit: 80,
+    beschikbaar: true,
+  },
+  {
+    id: 4,
+    naam: "Mediatheek R26",
+    type: "Zelfstudie",
+    verdieping: "1e verdieping",
+    capaciteit: 80,
+    beschikbaar: true,
+  },
+  {
+    id: 5,
+    naam: "Stilteruimte",
+    type: "Zelfstudie",
+    verdieping: "2e verdieping",
+    capaciteit: 20,
+    beschikbaar: true,
+  },
+  {
+    id: 6,
+    naam: "Werkplekken hal",
+    type: "Informeel",
+    verdieping: "Begane grond",
+    capaciteit: 40,
+    beschikbaar: true,
+  },
+  {
+    id: 7,
+    naam: "Mensa (kantine)",
+    type: "Horeca",
+    verdieping: "Begane grond",
+    capaciteit: 200,
+    beschikbaar: true,
+  },
+  {
+    id: 8,
+    naam: "R26/B3.4",
+    type: "Vergaderruimte",
+    verdieping: "3e verdieping",
+    capaciteit: 12,
+    beschikbaar: false,
+  },
+]
