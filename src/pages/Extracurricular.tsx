@@ -170,15 +170,24 @@ export function Extracurricular() {
             ))}
           </div>
           <div className="flex gap-3">
-            <button className="btn-primary" style={{ background: "#F97316" }}>
-              Activiteiten bekijken
-            </button>
-            <button
-              className="btn-outline"
-              style={{ color: "#F97316", borderColor: "#FED7AA" }}
+            <a
+              href="https://b302.nl"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary flex items-center gap-1.5"
+              style={{ background: "#F97316" }}
             >
-              Website Buro302
-            </button>
+              b302.nl <ExternalLink size={12} />
+            </a>
+            <a
+              href="https://linkedin.com/company/b302"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-outline flex items-center gap-1.5"
+              style={{ color: "#003082", borderColor: "#C0D4ED" }}
+            >
+              LinkedIn
+            </a>
           </div>
         </div>
       </div>
