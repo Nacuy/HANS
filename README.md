@@ -1,4 +1,4 @@
-# Campus-assistent
+# HANS
 
 React + Vite + Tailwind CSS campus assistant app.
 
