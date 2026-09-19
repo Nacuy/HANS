@@ -7,7 +7,7 @@ import { PraktischSection } from "./wiki/PraktischSection";
 
 export function Wiki() {
   return (
-    <div className="p-6 max-w-[1000px] space-y-5">
+    <div className="max-w-[1000px] space-y-5 p-4 md:p-6">
       <div>
         <h1 className="font-poppins font-bold text-2xl text-slate-900">Wiki</h1>
         <p className="text-slate-500 text-sm mt-0.5">
@@ -16,7 +16,7 @@ export function Wiki() {
         </p>
       </div>
 
-      <Accordion defaultOpen={["studiepunten"]}>
+      <Accordion>
         <AccordionItem
           value="studiepunten"
           icon={<TrendingUp size={18} />}

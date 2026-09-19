@@ -30,8 +30,8 @@ export function HulplijnenSection() {
                     {contact.wanneer}
                   </p>
                   <div className="flex flex-wrap gap-2 text-xs">
-                    <Button variant="link" asChild className="h-auto p-0 text-indigo-500">
-                      <a href={`mailto:${contact.email}`}>
+                    <Button variant="link" asChild className="h-auto max-w-full p-0 text-indigo-500">
+                      <a href={`mailto:${contact.email}`} className="min-w-0 break-all">
                         <Mail size={14} />
                         {contact.email}
                       </a>

@@ -24,9 +24,9 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50">
+    <div className="flex flex-col h-dvh overflow-x-hidden bg-slate-50">
       <Topbar active={page} onNavigate={setPage} />
-      <main className="flex-1 overflow-auto">
+      <main className="min-h-0 flex-1 overflow-auto overflow-x-hidden">
         {renderPage()}
       </main>
     </div>

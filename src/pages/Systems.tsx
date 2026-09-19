@@ -5,7 +5,7 @@ import { hanSystems } from "../data/navigation";
 
 export function Systems() {
   return (
-    <div className="p-6 space-y-5">
+    <div className="space-y-5 p-4 md:p-6">
       <div>
         <h1 className="font-poppins font-bold text-2xl text-slate-900">
           HAN-systemen
@@ -14,7 +14,7 @@ export function Systems() {
           Alle digitale tools die je als IT en Mediadesign-student gebruikt.
         </p>
       </div>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {hanSystems.map((sys) => (
           <Card key={sys.id} className="transition-shadow hover:shadow-md">
             <CardContent className="p-5 flex gap-4">

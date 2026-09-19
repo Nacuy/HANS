@@ -83,10 +83,10 @@ export function Locations() {
   )
 
   return (
-    <div className="flex h-full flex-col gap-4 p-6">
+    <div className="flex h-full min-h-0 flex-col gap-4 p-4 md:p-6">
       {/* Toolbar: campus, building, view */}
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="font-poppins text-xl font-bold text-slate-900">
+        <h1 className="w-full font-poppins text-xl font-bold text-slate-900 md:w-auto">
           Locaties
         </h1>
 
@@ -108,7 +108,7 @@ export function Locations() {
         </div>
 
         <Select value={buildingId} onValueChange={handleBuildingChange}>
-          <SelectTrigger className="h-9 w-56 rounded-xl bg-white font-poppins text-sm">
+          <SelectTrigger className="h-9 w-full rounded-xl bg-white font-poppins text-sm sm:w-56">
             <SelectValue placeholder="Kies gebouw" />
           </SelectTrigger>
           <SelectContent>
@@ -126,12 +126,12 @@ export function Locations() {
         </Select>
 
         {isLocationAvailable && (
-          <div className="ml-auto flex gap-1 rounded-xl bg-slate-100 p-1">
+          <div className="ml-auto flex w-full gap-1 rounded-xl bg-slate-100 p-1 sm:w-auto">
             {(["plan", "list"] as const).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
-                className={`rounded-lg px-4 py-1.5 font-poppins text-xs font-semibold transition-all ${
+                className={`flex-1 rounded-lg px-4 py-1.5 font-poppins text-xs font-semibold transition-all sm:flex-none ${
                   view === v
                     ? "bg-white text-slate-900 shadow-sm"
                     : "text-slate-500 hover:text-slate-700"
@@ -176,9 +176,9 @@ export function Locations() {
             <>
               {/* Map fills the page; controls and info float on top of it */}
               <div className="flex min-h-0 flex-1">
-                <Card className="relative min-h-[420px] flex-1 overflow-hidden p-0">
+                <Card className="relative min-h-[280px] flex-1 overflow-hidden p-0 md:min-h-[420px]">
                   {/* Floor controls float above the map */}
-                  <div className="pointer-events-none absolute left-4 top-4 z-10 flex flex-wrap items-center gap-2">
+                  <div className="pointer-events-none absolute left-3 top-3 z-10 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center gap-2 md:left-4 md:top-4">
                     <div className="pointer-events-auto flex gap-1 rounded-xl bg-white/90 p-1 shadow-sm backdrop-blur">
                       {([0, 1, 2, 3] as const).map((f) => (
                         <button
@@ -200,7 +200,7 @@ export function Locations() {
                     </div>
                     <span className="rounded-lg bg-white/90 px-3 py-1.5 font-poppins text-xs font-semibold text-slate-600 shadow-sm backdrop-blur">
                       {currentFloor.naam}
-                      <span className="ml-1.5 font-normal text-slate-400">
+                      <span className="ml-1.5 hidden font-normal text-slate-400 sm:inline">
                         {currentFloor.omschrijving}
                       </span>
                     </span>
@@ -221,7 +221,7 @@ export function Locations() {
                   </Suspense>
                   {/* Room details float over the map, top-right */}
                   {sel && (
-                    <div className="absolute right-4 top-4 z-10 w-56 space-y-3 rounded-xl bg-white/95 p-4 shadow-lg ring-1 ring-slate-900/5 backdrop-blur">
+                    <div className="absolute inset-x-3 bottom-3 z-10 space-y-3 rounded-xl bg-white/95 p-4 shadow-lg ring-1 ring-slate-900/5 backdrop-blur md:inset-x-auto md:bottom-auto md:right-4 md:top-4 md:w-56">
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <p className="font-poppins text-sm font-bold leading-tight text-slate-900">
@@ -279,7 +279,7 @@ export function Locations() {
                   )}
 
                   {/* Legend floats over the map, bottom-right */}
-                  <div className="pointer-events-none absolute bottom-4 right-4 z-10 w-48 space-y-1.5 rounded-xl bg-white/90 p-3 shadow-sm ring-1 ring-slate-900/5 backdrop-blur">
+                  <div className="pointer-events-none absolute bottom-4 right-4 z-10 hidden w-48 space-y-1.5 rounded-xl bg-white/90 p-3 shadow-sm ring-1 ring-slate-900/5 backdrop-blur md:block">
                     <p className="mb-2 font-poppins text-[10px] font-bold uppercase tracking-widest text-slate-400">
                       Legenda
                     </p>
@@ -350,7 +350,7 @@ export function Locations() {
                   ))}
                 </div>
               </div>
-              <div className="grid min-h-0 flex-1 grid-cols-2 content-start gap-3 overflow-y-auto pr-1">
+              <div className="grid min-h-0 flex-1 grid-cols-1 content-start gap-3 overflow-y-auto pr-1 md:grid-cols-2">
                 {filteredList.map((loc) => {
                   const cfg = loc.colorOverride ?? ROOM_TYPES[loc.type]
                   const typeLabel = ROOM_TYPES[loc.type].label
@@ -400,7 +400,7 @@ export function Locations() {
                   )
                 })}
                 {filteredList.length === 0 && (
-                  <Card className="col-span-2 p-10 flex flex-col items-center justify-center text-center">
+                  <Card className="col-span-1 p-10 flex flex-col items-center justify-center text-center md:col-span-2">
                     <XCircle size={28} className="text-slate-200 mb-2" />
                     <p className="font-poppins font-semibold text-slate-500 text-sm">
                       Geen locaties gevonden

@@ -9,10 +9,16 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import { Html, MapControls } from "@react-three/drei"
 import * as THREE from "three"
 import { FLOOR_DATA, ROOM_TYPES } from "@/data/floorPlan"
-import type { FloorData, FloorRoom } from "@/types"
+import type { FloorData, FloorRoom, StairDirection } from "@/types"
 
 const SVG_WIDTH = 800
 const ROOM_HEIGHT = 14
+const SLAB_THICKNESS = 2
+const WALL_HEIGHT = ROOM_HEIGHT - SLAB_THICKNESS
+const WALL_THICKNESS = 2.5
+/** Target depth of one step; the count is derived from the stairwell's length. */
+const STEP_TREAD = 9
+const WALL_TINT = new THREE.Color("#ffffff")
 const ANIM_DURATION = 1.1
 /** The outgoing floor clears out before the incoming one fades up, so the two
  * plates never overlap as semi-transparent ghosts. */
@@ -40,6 +46,149 @@ function roomCenter(room: FloorRoom, viewBoxHeight: number) {
 
 function canSelectRoom(room: FloorRoom) {
   return !room.id.startsWith("_") && room.type !== "overig"
+}
+
+/** Halls and corridors stay flat; everything else becomes an enclosed room,
+ * unless the room opts out explicitly. */
+function hasWalls(room: FloorRoom) {
+  return room.walls ?? room.type !== "overig"
+}
+
+function isStairwell(room: FloorRoom) {
+  return room.type === "trap"
+}
+
+/** A single flight of steps climbing to the top of the walls. Without an
+ * explicit direction the flight runs along the stairwell's long axis and rises
+ * away from the doorway. */
+function stairSteps(
+  width: number,
+  depth: number,
+  door: DoorSide,
+  direction: StairDirection | undefined,
+  walled: boolean
+): WallSegment[] {
+  const inset = walled ? WALL_THICKNESS * 2 : 0
+  const innerWidth = width - inset
+  const innerDepth = depth - inset
+  if (innerWidth < 6 || innerDepth < 6) return []
+
+  const alongX = direction
+    ? direction === "east" || direction === "west"
+    : innerWidth >= innerDepth
+  const run = alongX ? innerWidth : innerDepth
+  const tread = alongX ? innerDepth : innerWidth
+  const count = Math.min(Math.max(Math.round(run / STEP_TREAD), 6), 24)
+  const stepDepth = run / count
+  const rise = WALL_HEIGHT / count
+  const ascending = direction
+    ? direction === "east" || direction === "south"
+    : alongX
+      ? door !== "east"
+      : door !== "south"
+  /* The floor heights here are compressed for legibility, so a true rise-to-run
+   * ratio would look flat. A gap between treads keeps the steps readable. */
+  const nosing = Math.min(stepDepth * 0.14, 0.6)
+
+  const steps: WallSegment[] = []
+  for (let i = 0; i < count; i++) {
+    const height = rise * (i + 1)
+    const along = -run / 2 + stepDepth * (i + 0.5)
+    const offset = ascending ? along : -along
+    const y = SLAB_THICKNESS + height / 2
+    const length = stepDepth - nosing
+
+    steps.push({
+      args: alongX ? [length, height, tread] : [tread, height, length],
+      position: alongX ? [offset, y, 0] : [0, y, offset],
+    })
+  }
+
+  return steps
+}
+
+/** Walls carry a washed-out version of the room's accent so the plan reads by
+ * floor colour rather than by a grid of saturated outlines. */
+function wallTone(stroke: string, selected: boolean) {
+  const color = new THREE.Color(stroke)
+  return selected ? color : color.lerp(WALL_TINT, 0.5)
+}
+
+type DoorSide = "north" | "south" | "east" | "west"
+type WallSegment = {
+  args: [number, number, number]
+  position: [number, number, number]
+}
+
+/** Rooms open towards the middle of the plan, which is where the corridors run
+ * on every floor of this building. */
+function doorSide(
+  center: { x: number; z: number },
+  floorCenterX: number,
+  floorCenterZ: number
+): DoorSide {
+  const dx = center.x - floorCenterX
+  const dz = center.z - floorCenterZ
+  if (Math.abs(dz) >= Math.abs(dx)) return dz > 0 ? "north" : "south"
+  return dx > 0 ? "west" : "east"
+}
+
+function doorWidth(edge: number) {
+  return Math.min(Math.max(edge * 0.3, 10), 26)
+}
+
+function wallSegments(
+  width: number,
+  depth: number,
+  door: DoorSide
+): WallSegment[] {
+  const segments: WallSegment[] = []
+  const t = WALL_THICKNESS
+  const y = SLAB_THICKNESS + WALL_HEIGHT / 2
+
+  /** Splits one side into two stubs around the door opening, or keeps it whole
+   * when the room is too small to fit a doorway. */
+  const addSide = (
+    span: number,
+    isDoor: boolean,
+    build: (length: number, offset: number) => WallSegment
+  ) => {
+    if (!isDoor) {
+      segments.push(build(span, 0))
+      return
+    }
+
+    const gap = Math.min(doorWidth(span), span * 0.6)
+    const stub = (span - gap) / 2
+    if (stub < 1) {
+      segments.push(build(span, 0))
+      return
+    }
+
+    segments.push(build(stub, -(span - stub) / 2))
+    segments.push(build(stub, (span - stub) / 2))
+  }
+
+  const sideSpan = depth - t * 2
+
+  addSide(width, door === "north", (length, offset) => ({
+    args: [length, WALL_HEIGHT, t],
+    position: [offset, y, -depth / 2 + t / 2],
+  }))
+  addSide(width, door === "south", (length, offset) => ({
+    args: [length, WALL_HEIGHT, t],
+    position: [offset, y, depth / 2 - t / 2],
+  }))
+  addSide(sideSpan, door === "west", (length, offset) => ({
+    args: [t, WALL_HEIGHT, length],
+    position: [-width / 2 + t / 2, y, offset],
+  }))
+  addSide(sideSpan, door === "east", (length, offset) => ({
+    args: [t, WALL_HEIGHT, length],
+    position: [width / 2 - t / 2, y, offset],
+  }))
+
+  return segments
 }
 
 /** Scales every material in a floor group, keeping each one's own base opacity
@@ -89,12 +238,16 @@ function floorBounds(data: FloorData) {
 function RoomMesh({
   room,
   viewBoxHeight,
+  floorCenterX,
+  floorCenterZ,
   selected,
   labelsVisible,
   onSelect,
 }: {
   room: FloorRoom
   viewBoxHeight: number
+  floorCenterX: number
+  floorCenterZ: number
   selected: boolean
   labelsVisible: boolean
   onSelect: (roomId: string | null) => void
@@ -104,70 +257,104 @@ function RoomMesh({
   const cfg = room.colorOverride ?? ROOM_TYPES[room.type]
   const isTrap = room.id.startsWith("_")
   const clickable = canSelectRoom(room)
-  const { x, z } = roomCenter(room, viewBoxHeight)
+  const center = roomCenter(room, viewBoxHeight)
+  const { x, z } = center
   const showLabel = room.w > 45 && room.h > 35
   const showSubLabel = room.h > 60 && room.type !== "overig" && !isTrap
-  const fill = selected ? cfg.stroke : cfg.fill
+  const walled = hasWalls(room)
+  const stairwell = isStairwell(room)
+  const topY = walled || stairwell ? ROOM_HEIGHT : SLAB_THICKNESS
+  const floorColor = selected ? cfg.stroke : cfg.fill
+  const wallColor = wallTone(cfg.stroke, selected)
+  const stepColor = selected
+    ? new THREE.Color(cfg.textColor)
+    : new THREE.Color(cfg.fill).lerp(new THREE.Color(cfg.stroke), 0.3)
   const labelColor = selected ? "#ffffff" : cfg.textColor
+  const glow = hovered && !selected
 
   const setControlsEnabled = (enabled: boolean) => {
     const c = controls as { enabled?: boolean } | null
     if (c && typeof c.enabled === "boolean") c.enabled = enabled
   }
 
+  const door = doorSide(center, floorCenterX, floorCenterZ)
+  const walls = walled ? wallSegments(room.w, room.h, door) : []
+  const steps = stairwell
+    ? stairSteps(room.w, room.h, door, room.stairDirection, walled)
+    : []
+
   return (
-    <group position={[x, ROOM_HEIGHT / 2, z]}>
-      <mesh
-        castShadow
-        receiveShadow
-        userData={{ castsShadow: true }}
-        onClick={(e) => {
-          e.stopPropagation()
-          if (!clickable) return
-          onSelect(selected ? null : room.id)
-        }}
-        onPointerOver={(e) => {
-          e.stopPropagation()
-          if (!clickable) return
-          setHovered(true)
-          setControlsEnabled(false)
-          document.body.style.cursor = "pointer"
-        }}
-        onPointerOut={() => {
-          setHovered(false)
-          setControlsEnabled(true)
-          document.body.style.cursor = "auto"
-        }}
-      >
-        <boxGeometry args={[room.w, ROOM_HEIGHT, room.h]} />
+    <group
+      position={[x, 0, z]}
+      onClick={(e) => {
+        e.stopPropagation()
+        if (!clickable) return
+        onSelect(selected ? null : room.id)
+      }}
+      onPointerOver={(e) => {
+        e.stopPropagation()
+        if (!clickable) return
+        setHovered(true)
+        setControlsEnabled(false)
+        document.body.style.cursor = "pointer"
+      }}
+      onPointerOut={() => {
+        setHovered(false)
+        setControlsEnabled(true)
+        document.body.style.cursor = "auto"
+      }}
+    >
+      <mesh position={[0, SLAB_THICKNESS / 2, 0]} receiveShadow>
+        <boxGeometry args={[room.w, SLAB_THICKNESS, room.h]} />
         <meshStandardMaterial
-          color={fill}
+          color={floorColor}
           roughness={0.55}
           metalness={0.05}
-          emissive={hovered && !selected ? cfg.stroke : "#000000"}
-          emissiveIntensity={hovered && !selected ? 0.18 : 0}
+          emissive={glow ? cfg.stroke : "#000000"}
+          emissiveIntensity={glow ? 0.18 : 0}
         />
       </mesh>
 
-      <mesh
-        position={[0, ROOM_HEIGHT / 2 + 0.15, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
-      >
-        <planeGeometry
-          args={[Math.max(room.w - 1.5, 1), Math.max(room.h - 1.5, 1)]}
-        />
-        <meshBasicMaterial
-          color={selected ? cfg.textColor : cfg.stroke}
-          transparent
-          opacity={selected ? 0.35 : 0.12}
-          userData={{ baseOpacity: selected ? 0.35 : 0.12 }}
-        />
-      </mesh>
+      {walls.map((wall, i) => (
+        <mesh
+          key={`wall-${i}`}
+          position={wall.position}
+          castShadow
+          receiveShadow
+          userData={{ castsShadow: true }}
+        >
+          <boxGeometry args={wall.args} />
+          <meshStandardMaterial
+            color={wallColor}
+            roughness={0.7}
+            metalness={0.02}
+            emissive={glow ? cfg.stroke : "#000000"}
+            emissiveIntensity={glow ? 0.25 : 0}
+          />
+        </mesh>
+      ))}
+
+      {steps.map((step, i) => (
+        <mesh
+          key={`step-${i}`}
+          position={step.position}
+          castShadow
+          receiveShadow
+          userData={{ castsShadow: true }}
+        >
+          <boxGeometry args={step.args} />
+          <meshStandardMaterial
+            color={stepColor}
+            roughness={0.8}
+            metalness={0.02}
+            emissive={glow ? cfg.stroke : "#000000"}
+            emissiveIntensity={glow ? 0.2 : 0}
+          />
+        </mesh>
+      ))}
 
       {clickable && room.beschikbaar !== undefined && (
-        <mesh
-          position={[room.w / 2 - 8, ROOM_HEIGHT / 2 + 1.2, -room.h / 2 + 8]}
-        >
+        <mesh position={[room.w / 2 - 8, topY + 1.2, -room.h / 2 + 8]}>
           <sphereGeometry args={[3.2, 12, 12]} />
           <meshStandardMaterial
             color={room.beschikbaar ? "#10B981" : "#EF4444"}
@@ -179,7 +366,7 @@ function RoomMesh({
 
       {showLabel && (
         <Html
-          position={[0, ROOM_HEIGHT / 2 + 0.5, 0]}
+          position={[0, topY + 0.5, 0]}
           center
           zIndexRange={[10, 0]}
           style={{
@@ -305,6 +492,8 @@ function FloorSlab({
           key={room.id}
           room={room}
           viewBoxHeight={viewBoxHeight}
+          floorCenterX={bounds.centerX}
+          floorCenterZ={bounds.centerZ}
           selected={selectedRoom === room.id}
           labelsVisible={labelsVisible}
           onSelect={onSelectRoom}

@@ -41,7 +41,7 @@ export function PraktischSection() {
         </AlertDescription>
       </Alert>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Card>
           <CardHeader className="p-4 pb-0">
             <CardTitle className="font-poppins text-base text-slate-800">

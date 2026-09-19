@@ -40,7 +40,7 @@ export function BuitenDeLessenSection() {
             studenten laagdrempelig te verbinden — met elkaar, met de opleiding
             en met het bedrijfsleven. Lid worden kan via hun website.
           </p>
-          <div className="grid grid-cols-4 gap-3 mb-4">
+          <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
             {[
               { icon: <Monitor size={15} />, label: "LAN parties" },
               { icon: <BookOpen size={15} />, label: "Lunch lectures" },
@@ -60,18 +60,20 @@ export function BuitenDeLessenSection() {
               </div>
             ))}
           </div>
-          <div className="flex items-center gap-3 mb-4 p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-500">
-            <MapPin size={13} className="shrink-0 text-slate-400" />
-            <span>
-              Lokaal <strong className="text-slate-700">A0.22</strong> —
-              Ruitenberglaan 26, 6826 CC Arnhem
+          <div className="mb-4 flex flex-col gap-2 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:gap-3">
+            <span className="flex items-start gap-3">
+              <MapPin size={13} className="mt-0.5 shrink-0 text-slate-400" />
+              <span>
+                Lokaal <strong className="text-slate-700">A0.22</strong> —
+                Ruitenberglaan 26, 6826 CC Arnhem
+              </span>
             </span>
-            <span className="ml-auto flex items-center gap-1">
+            <span className="flex items-center gap-1 sm:ml-auto">
               <Phone size={13} />
               +31 85 212 9220
             </span>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <Button asChild className="bg-[#003082] hover:bg-[#001E56] font-poppins">
               <a href="https://svxtend.nl" target="_blank" rel="noopener noreferrer">
                 svxtend.nl <ExternalLink size={12} />
@@ -126,7 +128,7 @@ export function BuitenDeLessenSection() {
             B302 is een student-run creatief mediabureau binnen de han. wij
             realiseren creatieve projecten en digitale oplossingen op maat.
           </p>
-          <div className="grid grid-cols-4 gap-3 mb-4">
+          <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
             {[
               {
                 icon: <Briefcase size={15} />,
@@ -158,7 +160,7 @@ export function BuitenDeLessenSection() {
               </div>
             ))}
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <Button asChild className="bg-orange-500 hover:bg-orange-600 font-poppins">
               <a href="https://b302.nl" target="_blank" rel="noopener noreferrer">
                 b302.nl <ExternalLink size={12} />

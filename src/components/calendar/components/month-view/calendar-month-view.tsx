@@ -32,7 +32,10 @@ export function CalendarMonthView({ singleDayEvents, multiDayEvents }: IProps) {
       <div className="grid grid-cols-7 divide-x divide-border border-b border-border bg-muted/40">
         {WEEK_DAYS.map(day => (
           <div key={day} className="flex items-center justify-center py-2">
-            <span className="text-xs font-medium text-muted-foreground">{day}</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              <span className="sm:hidden">{day.slice(0, 1)}</span>
+              <span className="hidden sm:inline">{day}</span>
+            </span>
           </div>
         ))}
       </div>

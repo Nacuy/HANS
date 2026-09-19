@@ -36,7 +36,7 @@ export function CalendarHeader({ view, events }: IProps) {
         <DateNavigator view={view} events={events} />
       </div>
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
         <div className="inline-flex overflow-hidden rounded-md border border-border bg-background">
           {VIEW_OPTIONS.map(({ view: optionView, label, icon: Icon }, index) => (
             <Button

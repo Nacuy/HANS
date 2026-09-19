@@ -29,6 +29,9 @@ export interface RoomColor {
   textColor: string
 }
 
+/** Compass direction on the plan: north is the top edge, east the right one. */
+export type StairDirection = "north" | "south" | "east" | "west"
+
 export interface FloorRoom {
   id: string
   naam: string
@@ -43,6 +46,12 @@ export interface FloorRoom {
   /** Overrides the shared ROOM_TYPES color for this one room (used for rooms whose
    * plattegrond color doesn't map to a standard legend category). */
   colorOverride?: RoomColor
+  /** Direction a stairwell's steps climb towards. Defaults to running along the
+   * room's long side, rising away from the doorway. */
+  stairDirection?: StairDirection
+  /** Draws walls with a doorway around this room. Defaults to true for
+   * everything except corridors and halls, which stay bare floor plates. */
+  walls?: boolean
 }
 
 export interface FloorData {

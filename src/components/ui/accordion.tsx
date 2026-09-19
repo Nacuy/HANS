@@ -81,7 +81,7 @@ function AccordionItem({
         onClick={() => toggle(value)}
         aria-expanded={open}
         aria-controls={contentId}
-        className="w-full flex items-center gap-4 p-5 text-left transition-colors hover:bg-slate-50"
+        className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-slate-50 sm:gap-4 sm:p-5"
       >
         {icon && (
           <span className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-500 shrink-0">
@@ -105,7 +105,7 @@ function AccordionItem({
         />
       </button>
       {open && (
-        <div id={contentId} className="px-5 pb-5 pt-1 border-t border-slate-100">
+        <div id={contentId} className="border-t border-slate-100 px-4 pb-4 pt-1 sm:px-5 sm:pb-5">
           {children}
         </div>
       )}
