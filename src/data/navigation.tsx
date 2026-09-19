@@ -1,9 +1,4 @@
 import {
-  LayoutDashboard,
-  Monitor,
-  TrendingUp,
-  MapPin,
-  LifeBuoy,
   Star,
   Calendar,
   BookOpen,
@@ -16,23 +11,14 @@ import {
 import { Urls } from "../data/urls"
 import type { NavItem, HANSystem } from "../types"
 
+// De topbar rendert deze items als tekstlinks zonder icoon.
 export const navItems: NavItem[] = [
-  { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={17} /> },
-  { id: "systems", label: "HAN-systemen", icon: <Monitor size={17} /> },
-  { id: "schedule", label: "Rooster (MyX)", icon: <Calendar size={17} /> },
-  {
-    id: "credits",
-    label: "Studiepunten & Normen",
-    icon: <TrendingUp size={17} />,
-  },
-  { id: "locations", label: "Locaties", icon: <MapPin size={17} /> },
-  { id: "support", label: "Hulplijnen", icon: <LifeBuoy size={17} /> },
-  {
-    id: "extracurricular",
-    label: "Buiten de lessen",
-    icon: <Star size={17} />,
-  },
-  { id: "wiki", label: "Wiki", icon: <BookOpen size={17} /> },
+  { id: "systems", label: "HAN-systemen" },
+  { id: "locations", label: "Locaties" },
+  { id: "wiki", label: "Wiki" },
+  // Rooster is tijdelijk verborgen — de Schedule-pagina en route blijven bestaan,
+  // haal deze regel uit commentaar om het item terug te zetten in de navigatie.
+  // { id: "schedule", label: "Rooster (MyX)" },
 ]
 
 export const hanSystems: HANSystem[] = [

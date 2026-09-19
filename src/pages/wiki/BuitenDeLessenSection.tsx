@@ -2,7 +2,6 @@ import {
   BookOpen,
   Briefcase,
   Coffee,
-  Dumbbell,
   ExternalLink,
   Globe,
   MapPin,
@@ -10,23 +9,14 @@ import {
   Phone,
   Star,
   Users,
-  Zap,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
-export function Extracurricular() {
+export function BuitenDeLessenSection() {
   return (
-    <div className="p-6 max-w-[900px] space-y-5">
-      <div>
-        <h1 className="font-poppins font-bold text-2xl text-slate-900">
-          Buiten de lessen om
-        </h1>
-        <p className="text-slate-500 text-sm mt-0.5">
-          Meer uit je studietijd halen ook buiten de collegebankjes.
-        </p>
-      </div>
-
-      {/* S.V. Xtend */}
-      <div className="hans-card overflow-hidden">
+    <div className="space-y-4 pt-4">
+      <Card className="overflow-hidden">
         <div
           className="h-28 relative flex items-center px-6"
           style={{ background: "linear-gradient(to right, #003082, #001E56)" }}
@@ -43,7 +33,7 @@ export function Extracurricular() {
             </h2>
           </div>
         </div>
-        <div className="p-5">
+        <CardContent className="p-5">
           <p className="text-sm text-slate-600 leading-relaxed mb-4">
             De studievereniging voor ICT- en CMD-studenten aan de Academie IT
             &amp; Mediadesign van de HAN. Opgericht in 2015 met als doel
@@ -82,39 +72,42 @@ export function Extracurricular() {
             </span>
           </div>
           <div className="flex gap-3">
-            <a
-              href="https://svxtend.nl"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-primary flex items-center gap-1.5"
-              style={{ background: "#003082" }}
+            <Button asChild className="bg-[#003082] hover:bg-[#001E56] font-poppins">
+              <a href="https://svxtend.nl" target="_blank" rel="noopener noreferrer">
+                svxtend.nl <ExternalLink size={12} />
+              </a>
+            </Button>
+            <Button
+              variant="outline"
+              asChild
+              className="border-[#C0D4ED] text-[#003082] hover:bg-[#E6EEF8] font-poppins"
             >
-              svxtend.nl <ExternalLink size={12} />
-            </a>
-            <a
-              href="https://instagram.com/svxtend"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-outline flex items-center gap-1.5"
-              style={{ color: "#003082", borderColor: "#C0D4ED" }}
+              <a
+                href="https://instagram.com/svxtend"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Instagram
+              </a>
+            </Button>
+            <Button
+              variant="outline"
+              asChild
+              className="border-[#C0D4ED] text-[#003082] hover:bg-[#E6EEF8] font-poppins"
             >
-              Instagram
-            </a>
-            <a
-              href="https://nl.linkedin.com/company/ica-xtend"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-outline flex items-center gap-1.5"
-              style={{ color: "#003082", borderColor: "#C0D4ED" }}
-            >
-              LinkedIn
-            </a>
+              <a
+                href="https://nl.linkedin.com/company/ica-xtend"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                LinkedIn
+              </a>
+            </Button>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Buro302 */}
-      <div className="hans-card overflow-hidden">
+      <Card className="overflow-hidden">
         <div className="h-28 bg-gradient-to-r from-rose-400 to-orange-500 relative flex items-center px-6">
           <div className="absolute inset-0 opacity-20 flex items-center justify-end pr-6">
             <Briefcase size={96} className="text-white" />
@@ -128,7 +121,7 @@ export function Extracurricular() {
             </h2>
           </div>
         </div>
-        <div className="p-5">
+        <CardContent className="p-5">
           <p className="text-sm text-slate-600 leading-relaxed mb-4">
             B302 is een student-run creatief mediabureau binnen de han. wij
             realiseren creatieve projecten en digitale oplossingen op maat.
@@ -138,22 +131,18 @@ export function Extracurricular() {
               {
                 icon: <Briefcase size={15} />,
                 label: "Werken met echt projecten",
-                color: "orange",
               },
               {
                 icon: <Users size={15} />,
                 label: "Werken met creatieve mensen",
-                color: "rose",
               },
               {
                 icon: <Globe size={15} />,
                 label: "Werken met verschillende culturen",
-                color: "amber",
               },
               {
                 icon: <Star size={15} />,
                 label: "Werken met verschillende projecten",
-                color: "red",
               },
             ].map((item, i) => (
               <div
@@ -170,27 +159,27 @@ export function Extracurricular() {
             ))}
           </div>
           <div className="flex gap-3">
-            <a
-              href="https://b302.nl"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-primary flex items-center gap-1.5"
-              style={{ background: "#F97316" }}
+            <Button asChild className="bg-orange-500 hover:bg-orange-600 font-poppins">
+              <a href="https://b302.nl" target="_blank" rel="noopener noreferrer">
+                b302.nl <ExternalLink size={12} />
+              </a>
+            </Button>
+            <Button
+              variant="outline"
+              asChild
+              className="border-[#C0D4ED] text-[#003082] hover:bg-[#E6EEF8] font-poppins"
             >
-              b302.nl <ExternalLink size={12} />
-            </a>
-            <a
-              href="https://linkedin.com/company/b302"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-outline flex items-center gap-1.5"
-              style={{ color: "#003082", borderColor: "#C0D4ED" }}
-            >
-              LinkedIn
-            </a>
+              <a
+                href="https://linkedin.com/company/b302"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                LinkedIn
+              </a>
+            </Button>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

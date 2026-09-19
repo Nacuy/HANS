@@ -1,22 +1,6 @@
 import { Urls } from "@/data/urls"
 
-export type Page =
-  | "dashboard"
-  | "systems"
-  | "credits"
-  | "locations"
-  | "support"
-  | "extracurricular"
-  | "wiki"
-  | "schedule"
-
-export type BadgeType =
-  | "verplicht"
-  | "verwacht"
-  | "optioneel"
-  | "bezig"
-  | "bijna_verlopen"
-  | "ingeleverd"
+export type Page = "systems" | "locations" | "wiki" | "schedule"
 
 export type RoomType =
   | "collegezaal"
@@ -72,7 +56,15 @@ export interface FloorData {
 export interface NavItem {
   id: Page
   label: string
-  icon: React.ReactNode
+  /** Unused by the editorial text-only topbar; kept for non-nav surfaces. */
+  icon?: React.ReactNode
+}
+
+export interface Announcement {
+  id: number
+  titel: string
+  datum: string
+  tekst: string
 }
 
 export interface HANSystem {
@@ -84,22 +76,6 @@ export interface HANSystem {
   bg: string
   icon: React.ReactNode
   url?: string
-}
-
-export interface Deadline {
-  id: number
-  vak: string
-  taak: string
-  deadline: string
-  status: BadgeType
-}
-
-export interface OverviewCard {
-  id: string
-  icon: React.ReactNode
-  title: string
-  desc: string
-  badge: BadgeType
 }
 
 export interface Location {
@@ -121,14 +97,6 @@ export interface SupportContact {
   email: string
   tel: string
   locatie: string
-}
-
-export interface Course {
-  naam: string
-  ec: number
-  max: number
-  periode: string
-  status: string
 }
 
 export interface Activity {
@@ -166,9 +134,4 @@ export interface RoomTypeConfig {
   fill: string
   stroke: string
   textColor: string
-}
-
-export interface BadgeConfig {
-  label: string
-  className: string
 }

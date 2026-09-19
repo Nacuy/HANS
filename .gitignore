@@ -36,3 +36,14 @@ build/
 # Coverage
 coverage/
 .nyc_output/
+
+# Superdesign temporary artifacts
+.superdesign
+
+# Blender output — regenerate with the scripts in scripts/.
+# The app never loads these: FloorMap3D builds its geometry procedurally
+# from src/data/floorPlan.ts, so nothing here is a runtime asset.
+*.blend
+*.blend1
+*.glb
+HAN_Arnhem_*_Render.png

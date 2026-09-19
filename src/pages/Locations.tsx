@@ -1,12 +1,16 @@
-import { useState } from "react"
+import { lazy, Suspense, useState } from "react"
+import { MapPin, Building2, Search, XCircle, Clock } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import {
-  MapPin,
-  Building2,
-  Search,
-  XCircle,
-  ChevronRight,
-  Clock,
-} from "lucide-react"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   CAMPUS_CITIES,
   DEFAULT_BUILDING_ID,
@@ -16,6 +20,8 @@ import {
   type CampusCityId,
 } from "../data/campusLocations"
 import { FLOOR_DATA, ROOM_TYPES } from "../data/floorPlan"
+
+const FloorMap3D = lazy(() => import("@/components/FloorMap3D"))
 
 export function Locations() {
   const [view, setView] = useState<"plan" | "list">("plan")
@@ -48,7 +54,6 @@ export function Locations() {
   const currentFloor = FLOOR_DATA[floor]
   const sel = currentFloor.kamers.find((k) => k.id === selectedRoom) ?? null
   const selCfg = sel ? (sel.colorOverride ?? ROOM_TYPES[sel.type]) : null
-  const viewBoxHeight = currentFloor.viewBoxHeight ?? 395
   const floorLegend = Array.from(
     new Set(
       currentFloor.kamers
@@ -78,91 +83,69 @@ export function Locations() {
   )
 
   return (
-    <div className="p-6 space-y-5">
-      <div>
-        <h1 className="font-poppins font-bold text-2xl text-slate-900">
-          Locaties op de campus
+    <div className="flex h-full flex-col gap-4 p-6">
+      {/* Toolbar: campus, building, view */}
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="font-poppins text-xl font-bold text-slate-900">
+          Locaties
         </h1>
-        <p className="text-slate-500 text-sm mt-0.5">
-          Kies eerst campus en gebouw om lokalen te bekijken.
-        </p>
-      </div>
 
-      {/* Location selectors */}
-      <div className="hans-card p-5 space-y-5">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 font-poppins mb-2">
-            1. Campus
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {CAMPUS_CITIES.map((campus) => (
+        <div className="flex gap-1 rounded-xl bg-slate-100 p-1">
+          {CAMPUS_CITIES.map((campus) => (
+            <button
+              key={campus.id}
+              type="button"
+              onClick={() => handleCityChange(campus.id)}
+              className={`rounded-lg px-3 py-1.5 font-poppins text-xs font-semibold transition-all ${
+                cityId === campus.id
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              {campus.label}
+            </button>
+          ))}
+        </div>
+
+        <Select value={buildingId} onValueChange={handleBuildingChange}>
+          <SelectTrigger className="h-9 w-56 rounded-xl bg-white font-poppins text-sm">
+            <SelectValue placeholder="Kies gebouw" />
+          </SelectTrigger>
+          <SelectContent>
+            {city.buildings.map((campusBuilding) => (
+              <SelectItem key={campusBuilding.id} value={campusBuilding.id}>
+                <span className="flex items-center gap-2">
+                  {campusBuilding.address}
+                  {!campusBuilding.available && (
+                    <Clock size={11} className="text-slate-400" />
+                  )}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {isLocationAvailable && (
+          <div className="ml-auto flex gap-1 rounded-xl bg-slate-100 p-1">
+            {(["plan", "list"] as const).map((v) => (
               <button
-                key={campus.id}
-                type="button"
-                onClick={() => handleCityChange(campus.id)}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold font-poppins transition-all ${
-                  cityId === campus.id
-                    ? "bg-[#B70035] text-white shadow-sm"
-                    : "bg-slate-50 text-slate-600 border border-slate-200 hover:border-[#B70035]/30 hover:text-[#B70035]"
+                key={v}
+                onClick={() => setView(v)}
+                className={`rounded-lg px-4 py-1.5 font-poppins text-xs font-semibold transition-all ${
+                  view === v
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
                 }`}
               >
-                {campus.label}
+                {v === "plan" ? "🗺 3D Plattegrond" : "☰ Lijst"}
               </button>
             ))}
           </div>
-        </div>
-
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 font-poppins mb-2">
-            2. Gebouw
-          </p>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {city.buildings.map((campusBuilding) => {
-              const isSelected = buildingId === campusBuilding.id
-              return (
-                <button
-                  key={campusBuilding.id}
-                  type="button"
-                  onClick={() => handleBuildingChange(campusBuilding.id)}
-                  className={`rounded-xl border p-3 text-left transition-all ${
-                    isSelected
-                      ? "border-[#B70035] bg-[#FFF5F7] shadow-sm"
-                      : "border-slate-200 bg-white hover:border-[#B70035]/30"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="font-poppins text-sm font-semibold text-slate-900">
-                        {campusBuilding.label}
-                      </p>
-                      {campusBuilding.address !== campusBuilding.label && (
-                        <p className="mt-0.5 text-xs text-slate-500">
-                          {campusBuilding.address}
-                        </p>
-                      )}
-                    </div>
-                    {isSelected && (
-                      <ChevronRight
-                        size={16}
-                        className="shrink-0 text-[#B70035]"
-                      />
-                    )}
-                  </div>
-                  {!campusBuilding.available && (
-                    <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
-                      <Clock size={10} />
-                      Nog niet beschikbaar
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        </div>
+        )}
       </div>
 
       {!isLocationAvailable && (
-        <div className="hans-card p-10 flex flex-col items-center justify-center text-center">
+        <Card className="flex flex-1 flex-col items-center justify-center p-10 text-center">
           <Building2 size={32} className="text-slate-200 mb-3" />
           <h3 className="font-poppins font-semibold text-slate-700 text-base">
             Deze locatie is nog niet beschikbaar
@@ -174,264 +157,83 @@ export function Locations() {
             </span>
             .
           </p>
-          <button
+          <Button
             type="button"
+            className="mt-5 font-poppins"
             onClick={() => {
               handleCityChange("arnhem")
               setBuildingId(DEFAULT_BUILDING_ID)
             }}
-            className="mt-5 btn-primary"
           >
             Ga naar Ruitenberglaan 26
-          </button>
-        </div>
+          </Button>
+        </Card>
       )}
 
       {isLocationAvailable && (
         <>
-          {/* Search and filter */}
-          <div className="flex gap-3">
-            <div className="relative flex-1 max-w-xs">
-              <Search
-                size={14}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-              />
-              <input
-                type="text"
-                placeholder="Zoek lokaalnummer..."
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-xl outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all"
-              />
-            </div>
-            <div className="flex gap-1 bg-slate-100 rounded-xl p-1 shrink-0">
-              {(["plan", "list"] as const).map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setView(v)}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-semibold font-poppins transition-all ${
-                    view === v
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
-                  }`}
-                >
-                  {v === "plan" ? "🗺 Plattegrond" : "☰ Lijst"}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {view === "plan" && (
             <>
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-xs font-semibold text-slate-500 font-poppins">
-                  Verdieping:
-                </span>
-                <div className="flex gap-1.5">
-                  {([0, 1, 2, 3] as const).map((f) => (
-                    <button
-                      key={f}
-                      type="button"
-                      onClick={() => {
-                        setFloor(f)
-                        setSelectedRoom(null)
-                      }}
-                      className={`h-10 w-10 rounded-xl text-sm font-bold font-poppins transition-all ${
-                        floor === f
-                          ? "bg-[#B70035] text-white shadow-md"
-                          : "bg-white text-slate-600 border border-slate-200 hover:border-[#B70035]/40 hover:text-[#B70035]"
-                      }`}
-                    >
-                      {f === 0 ? "BG" : f}
-                    </button>
-                  ))}
-                </div>
-                <span className="text-sm font-medium text-slate-600 font-poppins">
-                  {currentFloor.naam}
-                </span>
-                <span className="text-xs text-slate-400">
-                  — {currentFloor.omschrijving}
-                </span>
-              </div>
-
-              {/* Floor plan + detail panel */}
-              <div className="flex gap-4">
-                {/* SVG Plan */}
-                <div className="hans-card flex-1 p-3 overflow-hidden">
-                  <svg
-                    viewBox={`0 0 800 ${viewBoxHeight}`}
-                    className="w-full"
-                    style={{ fontFamily: "'Poppins', sans-serif" }}
-                  >
-                    {/* Building shell */}
-                    <rect
-                      x={0}
-                      y={0}
-                      width={800}
-                      height={viewBoxHeight}
-                      rx={8}
-                      fill="#F8FAFC"
-                      stroke="#CBD5E1"
-                      strokeWidth={1.5}
-                    />
-
-                    {/* Compass label */}
-                    <text
-                      x={12}
-                      y={18}
-                      fontSize={9}
-                      fill="#94A3B8"
-                      fontWeight="600"
-                    >
-                      N ↑
-                    </text>
-
-                    {/* Rooms */}
-                    {currentFloor.kamers.map((room) => {
-                      const cfg = room.colorOverride ?? ROOM_TYPES[room.type]
-                      const isSelected = selectedRoom === room.id
-                      const isTrap = room.id.startsWith("_")
-                      const canClick = !isTrap && room.type !== "overig"
-                      const cx = room.x + room.w / 2
-                      const cy = room.y + room.h / 2
-                      const showLabel = room.w > 45 && room.h > 35
-                      const showSubLabel = room.h > 60 && room.type !== "overig"
-
-                      return (
-                        <g
-                          key={room.id}
-                          style={{ cursor: canClick ? "pointer" : "default" }}
-                          onClick={() =>
-                            canClick &&
-                            setSelectedRoom(isSelected ? null : room.id)
-                          }
+              {/* Map fills the page; controls and info float on top of it */}
+              <div className="flex min-h-0 flex-1">
+                <Card className="relative min-h-[420px] flex-1 overflow-hidden p-0">
+                  {/* Floor controls float above the map */}
+                  <div className="pointer-events-none absolute left-4 top-4 z-10 flex flex-wrap items-center gap-2">
+                    <div className="pointer-events-auto flex gap-1 rounded-xl bg-white/90 p-1 shadow-sm backdrop-blur">
+                      {([0, 1, 2, 3] as const).map((f) => (
+                        <button
+                          key={f}
+                          type="button"
+                          onClick={() => {
+                            setFloor(f)
+                            setSelectedRoom(null)
+                          }}
+                          className={`h-9 w-9 rounded-lg font-poppins text-sm font-bold transition-all ${
+                            floor === f
+                              ? "bg-[#B70035] text-white shadow-sm"
+                              : "text-slate-600 hover:bg-slate-100 hover:text-[#B70035]"
+                          }`}
                         >
-                          <rect
-                            x={room.x}
-                            y={room.y}
-                            width={room.w}
-                            height={room.h}
-                            rx={room.rx ?? 4}
-                            fill={isSelected ? cfg.stroke : cfg.fill}
-                            stroke={isSelected ? cfg.textColor : cfg.stroke}
-                            strokeWidth={isSelected ? 2 : 1}
-                            opacity={0.95}
-                          />
-                          {/* Availability dot */}
-                          {canClick && room.beschikbaar !== undefined && (
-                            <circle
-                              cx={room.x + room.w - 7}
-                              cy={room.y + 7}
-                              r={4}
-                              fill={room.beschikbaar ? "#10B981" : "#EF4444"}
-                            />
-                          )}
-                          {showLabel && !isTrap && (
-                            <>
-                              <text
-                                x={cx}
-                                y={cy - (room.h > 60 ? 6 : 0)}
-                                textAnchor="middle"
-                                dominantBaseline="middle"
-                                fontSize={room.w > 120 ? 10 : 9}
-                                fontWeight="700"
-                                fill={isSelected ? "white" : cfg.textColor}
-                              >
-                                {room.id.length <= 6
-                                  ? room.id
-                                  : room.id.slice(0, 7)}
-                              </text>
-                              {showSubLabel && (
-                                <text
-                                  x={cx}
-                                  y={cy + 9}
-                                  textAnchor="middle"
-                                  dominantBaseline="middle"
-                                  fontSize={8}
-                                  fill={
-                                    isSelected
-                                      ? "rgba(255,255,255,0.85)"
-                                      : cfg.stroke
-                                  }
-                                  opacity={0.85}
-                                >
-                                  {ROOM_TYPES[room.type].label}
-                                </text>
-                              )}
-                            </>
-                          )}
-                          {isTrap && showLabel && (
-                            <text
-                              x={cx}
-                              y={cy}
-                              textAnchor="middle"
-                              dominantBaseline="middle"
-                              fontSize={7}
-                              fill="#94A3B8"
-                              fontWeight="600"
-                              transform={
-                                room.h > room.w
-                                  ? `rotate(-90,${cx},${cy})`
-                                  : undefined
-                              }
-                            >
-                              TRAP
-                            </text>
-                          )}
-                        </g>
-                      )
-                    })}
+                          {f === 0 ? "BG" : f}
+                        </button>
+                      ))}
+                    </div>
+                    <span className="rounded-lg bg-white/90 px-3 py-1.5 font-poppins text-xs font-semibold text-slate-600 shadow-sm backdrop-blur">
+                      {currentFloor.naam}
+                      <span className="ml-1.5 font-normal text-slate-400">
+                        {currentFloor.omschrijving}
+                      </span>
+                    </span>
+                  </div>
 
-                    {/* Floor label badge */}
-                    <rect
-                      x={5}
-                      y={viewBoxHeight - 25}
-                      width={70}
-                      height={20}
-                      rx={4}
-                      fill="#1E293B"
+                  <Suspense
+                    fallback={
+                      <div className="flex h-full items-center justify-center bg-slate-100 font-poppins text-sm text-slate-400">
+                        3D plattegrond laden…
+                      </div>
+                    }
+                  >
+                    <FloorMap3D
+                      floor={floor}
+                      selectedRoom={selectedRoom}
+                      onSelectRoom={setSelectedRoom}
                     />
-                    <text
-                      x={40}
-                      y={viewBoxHeight - 12}
-                      textAnchor="middle"
-                      fontSize={9}
-                      fill="white"
-                      fontWeight="700"
-                    >
-                      {floor === 0 ? "BG" : `${floor}e VERD.`}
-                    </text>
-
-                    {/* North arrow */}
-                    <text
-                      x={770}
-                      y={18}
-                      fontSize={9}
-                      fill="#94A3B8"
-                      textAnchor="end"
-                      fontWeight="600"
-                    >
-                      ↓ Z
-                    </text>
-                  </svg>
-                </div>
-
-                {/* Detail panel */}
-                <div className="w-56 shrink-0 space-y-3">
-                  {sel ? (
-                    <div className="hans-card p-4 space-y-3">
+                  </Suspense>
+                  {/* Room details float over the map, top-right */}
+                  {sel && (
+                    <div className="absolute right-4 top-4 z-10 w-56 space-y-3 rounded-xl bg-white/95 p-4 shadow-lg ring-1 ring-slate-900/5 backdrop-blur">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <p className="font-poppins font-bold text-slate-900 text-sm leading-tight">
+                          <p className="font-poppins text-sm font-bold leading-tight text-slate-900">
                             {sel.naam}
                           </p>
-                          <p className="text-[11px] text-slate-400 mt-0.5 font-poppins">
+                          <p className="mt-0.5 font-poppins text-[11px] text-slate-400">
                             {ROOM_TYPES[sel.type].label}
                           </p>
                         </div>
                         <button
                           onClick={() => setSelectedRoom(null)}
-                          className="text-slate-300 hover:text-slate-500 transition-colors shrink-0"
+                          className="shrink-0 text-slate-300 transition-colors hover:text-slate-500"
                         >
                           <XCircle size={16} />
                         </button>
@@ -439,14 +241,14 @@ export function Locations() {
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-slate-500">Verdieping</span>
-                          <span className="font-semibold text-slate-700 font-poppins">
+                          <span className="font-poppins font-semibold text-slate-700">
                             {currentFloor.naam}
                           </span>
                         </div>
                         {sel.capaciteit && (
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-slate-500">Capaciteit</span>
-                            <span className="font-semibold text-slate-700 font-poppins">
+                            <span className="font-poppins font-semibold text-slate-700">
                               {sel.capaciteit} pers.
                             </span>
                           </div>
@@ -455,7 +257,7 @@ export function Locations() {
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-slate-500">Status</span>
                             <span
-                              className={`font-semibold font-poppins ${
+                              className={`font-poppins font-semibold ${
                                 sel.beschikbaar
                                   ? "text-emerald-600"
                                   : "text-red-500"
@@ -467,31 +269,24 @@ export function Locations() {
                         )}
                       </div>
                       <div
-                        className="w-full h-2 rounded-full"
+                        className="h-2 w-full rounded-full"
                         style={{
                           background: selCfg!.fill,
                           border: `1px solid ${selCfg!.stroke}`,
                         }}
                       />
                     </div>
-                  ) : (
-                    <div className="hans-card p-4 flex flex-col items-center justify-center text-center h-36">
-                      <MapPin size={22} className="text-slate-200 mb-2" />
-                      <p className="text-xs text-slate-400 font-poppins">
-                        Klik op een lokaal voor details
-                      </p>
-                    </div>
                   )}
 
-                  {/* Legend */}
-                  <div className="hans-card p-3 space-y-1.5">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-poppins mb-2">
+                  {/* Legend floats over the map, bottom-right */}
+                  <div className="pointer-events-none absolute bottom-4 right-4 z-10 w-48 space-y-1.5 rounded-xl bg-white/90 p-3 shadow-sm ring-1 ring-slate-900/5 backdrop-blur">
+                    <p className="mb-2 font-poppins text-[10px] font-bold uppercase tracking-widest text-slate-400">
                       Legenda
                     </p>
                     {floorLegend.map((cfg) => (
                       <div key={cfg.label} className="flex items-center gap-2">
                         <div
-                          className="w-3 h-3 rounded-sm shrink-0"
+                          className="h-3 w-3 shrink-0 rounded-sm"
                           style={{
                             background: cfg.fill,
                             border: `1.5px solid ${cfg.stroke}`,
@@ -502,61 +297,67 @@ export function Locations() {
                         </span>
                       </div>
                     ))}
-                    <div className="flex items-center gap-2 mt-1 pt-1 border-t border-slate-100">
+                    <div className="mt-1 flex items-center gap-2 border-t border-slate-100 pt-1.5">
                       <div className="flex gap-1">
-                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                        <div className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                        <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
                       </div>
                       <span className="text-[11px] text-slate-400">
                         Beschikbaar / Bezet
                       </span>
                     </div>
+                    {!sel && (
+                      <div className="mt-1 flex items-center gap-1.5 border-t border-slate-100 pt-1.5">
+                        <MapPin size={11} className="shrink-0 text-slate-300" />
+                        <span className="font-poppins text-[10px] text-slate-400">
+                          Klik op een lokaal voor details
+                        </span>
+                      </div>
+                    )}
                   </div>
-                </div>
+                </Card>
               </div>
             </>
           )}
 
           {view === "list" && (
-            <>
+            <div className="flex min-h-0 flex-1 flex-col gap-3">
               <div className="flex gap-3 flex-wrap">
                 <div className="relative max-w-xs flex-1">
                   <Search
                     size={14}
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                   />
-                  <input
+                  <Input
                     type="text"
                     placeholder="Zoek lokaalnummer..."
                     value={filter}
                     onChange={(e) => setFilter(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-xl outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all"
+                    className="pl-9"
                   />
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   {listTypes.map((t) => (
-                    <button
+                    <Button
                       key={t}
+                      size="sm"
+                      variant={typeFilter === t ? "default" : "outline"}
                       onClick={() => setTypeFilter(t)}
-                      className={`px-3 py-1.5 text-xs font-semibold font-poppins rounded-lg border transition-all ${
-                        typeFilter === t
-                          ? "bg-[#B70035] text-white border-[#B70035]"
-                          : "bg-white text-slate-600 border-slate-200 hover:border-[#B70035]/30 hover:text-[#B70035]"
-                      }`}
+                      className="font-poppins"
                     >
                       {t}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid min-h-0 flex-1 grid-cols-2 content-start gap-3 overflow-y-auto pr-1">
                 {filteredList.map((loc) => {
                   const cfg = loc.colorOverride ?? ROOM_TYPES[loc.type]
                   const typeLabel = ROOM_TYPES[loc.type].label
                   return (
-                    <div
+                    <Card
                       key={`${loc.verdiepingNr}-${loc.id}`}
-                      className="hans-card p-4 flex items-center gap-3"
+                      className="p-4 flex items-center gap-3"
                     >
                       <div
                         className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-sm font-bold font-poppins"
@@ -574,15 +375,16 @@ export function Locations() {
                             {loc.naam}
                           </h4>
                           {loc.beschikbaar !== undefined && (
-                            <span
-                              className={`text-[10px] font-semibold font-poppins px-2 py-0.5 rounded-full shrink-0 ${
+                            <Badge
+                              variant="outline"
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold font-poppins shadow-none shrink-0 ${
                                 loc.beschikbaar
-                                  ? "bg-emerald-50 text-emerald-600"
-                                  : "bg-red-50 text-red-500"
+                                  ? "border-emerald-200 bg-emerald-50 text-emerald-600"
+                                  : "border-red-200 bg-red-50 text-red-500"
                               }`}
                             >
                               {loc.beschikbaar ? "Beschikbaar" : "Bezet"}
-                            </span>
+                            </Badge>
                           )}
                         </div>
                         <p className="text-xs text-slate-500">
@@ -594,19 +396,19 @@ export function Locations() {
                           </p>
                         )}
                       </div>
-                    </div>
+                    </Card>
                   )
                 })}
                 {filteredList.length === 0 && (
-                  <div className="col-span-2 hans-card p-10 flex flex-col items-center justify-center text-center">
+                  <Card className="col-span-2 p-10 flex flex-col items-center justify-center text-center">
                     <XCircle size={28} className="text-slate-200 mb-2" />
                     <p className="font-poppins font-semibold text-slate-500 text-sm">
                       Geen locaties gevonden
                     </p>
-                  </div>
+                  </Card>
                 )}
               </div>
-            </>
+            </div>
           )}
         </>
       )}
