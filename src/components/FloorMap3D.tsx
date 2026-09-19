@@ -19,6 +19,8 @@ const WALL_THICKNESS = 2.5
 /** Target depth of one step; the count is derived from the stairwell's length. */
 const STEP_TREAD = 9
 const WALL_TINT = new THREE.Color("#ffffff")
+/** Polar angle used by CameraFit and locked on MapControls (pitch 64° from the floor). */
+const CAMERA_POLAR = Math.PI / 2 - THREE.MathUtils.degToRad(64)
 const ANIM_DURATION = 1.1
 /** The outgoing floor clears out before the incoming one fades up, so the two
  * plates never overlap as semi-transparent ghosts. */
@@ -515,7 +517,7 @@ function CameraFit({ floor }: { floor: number }) {
 
     const bounds = floorBounds(data)
     const margin = 1.06
-    const pitch = THREE.MathUtils.degToRad(64)
+    const pitch = Math.PI / 2 - CAMERA_POLAR
     const vFov = (cam.fov * Math.PI) / 180
     const halfW = bounds.width / 2
     const halfD = bounds.depth / 2
@@ -732,12 +734,27 @@ function Scene({ floor, selectedRoom, onSelectRoom }: FloorMap3DProps) {
         makeDefault
         enableDamping
         dampingFactor={0.08}
-        maxPolarAngle={Math.PI / 2.35}
-        minPolarAngle={0.25}
+        enableRotate={false}
+        enablePan
+        enableZoom
+        /* Keep the CameraFit pitch locked — drag must never tilt. */
+        minPolarAngle={CAMERA_POLAR}
+        maxPolarAngle={CAMERA_POLAR}
         minDistance={150}
         maxDistance={2800}
         target={[0, 0, 0]}
-        screenSpacePanning
+        /* Pan on the ground plane, not in screen space, so vertical drag
+         * slides the floor instead of raising the camera. */
+        screenSpacePanning={false}
+        mouseButtons={{
+          LEFT: THREE.MOUSE.PAN,
+          MIDDLE: THREE.MOUSE.DOLLY,
+          RIGHT: THREE.MOUSE.PAN,
+        }}
+        touches={{
+          ONE: THREE.TOUCH.PAN,
+          TWO: THREE.TOUCH.DOLLY_PAN,
+        }}
       />
       <CameraFit floor={incomingFloor ?? baseFloor} />
     </>
