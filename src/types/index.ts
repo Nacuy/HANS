@@ -1,6 +1,6 @@
 import { Urls } from "@/data/urls"
 
-export type Page = "systems" | "locations" | "wiki" | "schedule"
+export type Page = "home" | "systems" | "locations" | "wiki" | "schedule"
 
 export type RoomType =
   | "collegezaal"
@@ -30,7 +30,8 @@ export interface RoomColor {
 }
 
 /** Compass direction on the plan: north is the top edge, east the right one. */
-export type StairDirection = "north" | "south" | "east" | "west"
+export type PlanSide = "north" | "south" | "east" | "west"
+export type StairDirection = PlanSide
 
 export interface FloorRoom {
   id: string
@@ -46,6 +47,16 @@ export interface FloorRoom {
   /** Overrides the shared ROOM_TYPES color for this one room (used for rooms whose
    * plattegrond color doesn't map to a standard legend category). */
   colorOverride?: RoomColor
+  /** Optional polygon in SVG plan coordinates (same space as x/y). When set, the
+   * room is extruded from these vertices instead of the axis-aligned box.
+   * Keep x/y/w/h as the bounding box for labels and framing. */
+  points?: [number, number][]
+  /** Edge index that gets the doorway when `points` is set (0 = between
+   * points[0] and points[1]). Defaults to the edge closest to the floor center. */
+  doorEdge?: number
+  /** Which wall gets the doorway on rectangular rooms, or which side's edge is
+   * preferred on polygons. Defaults to opening towards the floor center. */
+  door?: PlanSide
   /** Direction a stairwell's steps climb towards. Defaults to running along the
    * room's long side, rising away from the doorway. */
   stairDirection?: StairDirection

@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { Topbar } from "./components"
+import { Home } from "./pages/Home"
 import { Systems } from "./pages/Systems"
 import { Locations } from "./pages/Locations"
 import { Wiki } from "./pages/Wiki"
@@ -7,10 +8,12 @@ import { Schedule } from "./pages/Schedule"
 import type { Page } from "./types"
 
 export default function App() {
-  const [page, setPage] = useState<Page>("systems")
+  const [page, setPage] = useState<Page>("home")
 
   const renderPage = () => {
     switch (page) {
+      case "home":
+        return <Home onNavigate={setPage} />
       case "locations":
         return <Locations />
       case "wiki":
@@ -18,8 +21,9 @@ export default function App() {
       case "schedule":
         return <Schedule />
       case "systems":
-      default:
         return <Systems />
+      default:
+        return <Home onNavigate={setPage} />
     }
   }
 

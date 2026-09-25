@@ -16,7 +16,7 @@ export function StudiepuntenSection() {
         </p>
       </div>
 
-      <div className="bg-red-50 border border-red-100 rounded-xl p-3.5">
+      <div className="rounded-xl border border-red-100 bg-red-50 p-3.5 transition-all hover:border-indigo-200 hover:shadow-md">
         <p className="text-xs font-bold text-red-700 font-poppins mb-1">
           BSA-norm (jaar 1 → jaar 2)
         </p>

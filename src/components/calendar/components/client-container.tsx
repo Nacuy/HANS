@@ -82,7 +82,7 @@ export function ClientContainer() {
   }, [filteredEvents]);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:border-indigo-200 hover:shadow-md">
       <CalendarHeader view={view} events={filteredEvents} />
 
       {view === "day" && <CalendarDayView singleDayEvents={singleDayEvents} multiDayEvents={multiDayEvents} />}

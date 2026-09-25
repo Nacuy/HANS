@@ -72,7 +72,7 @@ function AccordionItem({
   return (
     <div
       className={cn(
-        "rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden",
+        "overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-900 shadow-sm transition-all hover:border-indigo-200 hover:shadow-md",
         className
       )}
     >

@@ -32,14 +32,20 @@ export function Topbar({ active, onNavigate }: TopbarProps) {
   return (
     <header className="relative bg-indigo-600 border-b border-indigo-700 shrink-0 z-20 pt-[env(safe-area-inset-top)]">
       <div className="h-16 md:h-20 flex items-center px-4 md:px-5 gap-4 md:gap-8">
-        <div className="flex flex-col justify-center shrink-0 leading-none">
+        <button
+          type="button"
+          onClick={() => handleNavigate("home")}
+          aria-label="Naar homepage"
+          style={{ cursor: "pointer" }}
+          className="flex flex-col justify-center shrink-0 leading-none text-left rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+        >
           <span className="font-poppins font-extrabold text-[20px] md:text-[22px] text-white tracking-tight">
             HANS
           </span>
           <span className="font-poppins font-medium uppercase tracking-[0.18em] text-[9px] md:text-[10px] text-white/70 mt-1.5">
             Studentenassistentie
           </span>
-        </div>
+        </button>
 
         <nav className="hidden md:flex items-center gap-1 overflow-x-auto">
           {navItems.map((item) => (

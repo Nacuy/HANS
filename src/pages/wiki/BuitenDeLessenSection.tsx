@@ -49,18 +49,18 @@ export function BuitenDeLessenSection() {
             ].map((item, i) => (
               <div
                 key={i}
-                className="bg-[#E6EEF8] rounded-xl p-3 text-center border border-[#C0D4ED]"
+                className="rounded-xl border border-slate-200 bg-white p-3 text-center transition-all hover:border-indigo-200 hover:shadow-md"
               >
-                <div className="w-8 h-8 rounded-lg bg-[#C0D4ED] flex items-center justify-center text-[#003082] mx-auto mb-2">
+                <div className="mx-auto mb-2 flex size-8 items-center justify-center rounded-lg bg-[#E6EEF8] text-[#003082]">
                   {item.icon}
                 </div>
-                <p className="text-xs font-bold text-[#003082] font-poppins">
+                <p className="font-poppins text-xs font-bold text-slate-800">
                   {item.label}
                 </p>
               </div>
             ))}
           </div>
-          <div className="mb-4 flex flex-col gap-2 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:gap-3">
+          <div className="mb-4 flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-500 transition-all hover:border-indigo-200 hover:shadow-md sm:flex-row sm:items-center sm:gap-3">
             <span className="flex items-start gap-3">
               <MapPin size={13} className="mt-0.5 shrink-0 text-slate-400" />
               <span>
@@ -149,12 +149,12 @@ export function BuitenDeLessenSection() {
             ].map((item, i) => (
               <div
                 key={i}
-                className="bg-orange-50 rounded-xl p-3 text-center border border-orange-100"
+                className="rounded-xl border border-slate-200 bg-white p-3 text-center transition-all hover:border-indigo-200 hover:shadow-md"
               >
-                <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 mx-auto mb-2">
+                <div className="mx-auto mb-2 flex size-8 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
                   {item.icon}
                 </div>
-                <p className="text-xs font-bold text-orange-700 font-poppins">
+                <p className="font-poppins text-xs font-bold text-slate-800">
                   {item.label}
                 </p>
               </div>

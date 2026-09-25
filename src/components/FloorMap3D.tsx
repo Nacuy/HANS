@@ -1,6 +1,7 @@
 import {
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type RefObject,
@@ -9,7 +10,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber"
 import { Html, MapControls } from "@react-three/drei"
 import * as THREE from "three"
 import { FLOOR_DATA, ROOM_TYPES } from "@/data/floorPlan"
-import type { FloorData, FloorRoom, StairDirection } from "@/types"
+import type { FloorData, FloorRoom, PlanSide, StairDirection } from "@/types"
 
 const SVG_WIDTH = 800
 const ROOM_HEIGHT = 14
@@ -33,17 +34,46 @@ type FloorMap3DProps = {
   floor: number
   selectedRoom: string | null
   onSelectRoom: (roomId: string | null) => void
+  /** Homepage teaser: auto-orbit, no interaction, no room labels. */
+  preview?: boolean
 }
 
 function easeInOutCubic(t: number) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 }
 
-function roomCenter(room: FloorRoom, viewBoxHeight: number) {
-  return {
-    x: room.x + room.w / 2 - SVG_WIDTH / 2,
-    z: room.y + room.h / 2 - viewBoxHeight / 2,
+function roomRect(room: FloorRoom) {
+  if (room.points && room.points.length >= 3) {
+    const xs = room.points.map((p) => p[0])
+    const ys = room.points.map((p) => p[1])
+    const minX = Math.min(...xs)
+    const maxX = Math.max(...xs)
+    const minY = Math.min(...ys)
+    const maxY = Math.max(...ys)
+    return { x: minX, y: minY, w: maxX - minX, h: maxY - minY }
   }
+  return { x: room.x, y: room.y, w: room.w, h: room.h }
+}
+
+function roomCenter(room: FloorRoom, viewBoxHeight: number) {
+  const rect = roomRect(room)
+  return {
+    x: rect.x + rect.w / 2 - SVG_WIDTH / 2,
+    z: rect.y + rect.h / 2 - viewBoxHeight / 2,
+  }
+}
+
+/** Local XZ vertices relative to the room's bounding-box centre. */
+function roomLocalPolygon(
+  room: FloorRoom,
+  viewBoxHeight: number
+): { x: number; z: number }[] | null {
+  if (!room.points || room.points.length < 3) return null
+  const { x: cx, z: cz } = roomCenter(room, viewBoxHeight)
+  return room.points.map(([px, py]) => ({
+    x: px - SVG_WIDTH / 2 - cx,
+    z: py - viewBoxHeight / 2 - cz,
+  }))
 }
 
 function canSelectRoom(room: FloorRoom) {
@@ -66,7 +96,7 @@ function isStairwell(room: FloorRoom) {
 function stairSteps(
   width: number,
   depth: number,
-  door: DoorSide,
+  door: PlanSide,
   direction: StairDirection | undefined,
   walled: boolean
 ): WallSegment[] {
@@ -116,10 +146,10 @@ function wallTone(stroke: string, selected: boolean) {
   return selected ? color : color.lerp(WALL_TINT, 0.5)
 }
 
-type DoorSide = "north" | "south" | "east" | "west"
 type WallSegment = {
   args: [number, number, number]
   position: [number, number, number]
+  rotation?: [number, number, number]
 }
 
 /** Rooms open towards the middle of the plan, which is where the corridors run
@@ -128,7 +158,7 @@ function doorSide(
   center: { x: number; z: number },
   floorCenterX: number,
   floorCenterZ: number
-): DoorSide {
+): PlanSide {
   const dx = center.x - floorCenterX
   const dz = center.z - floorCenterZ
   if (Math.abs(dz) >= Math.abs(dx)) return dz > 0 ? "north" : "south"
@@ -142,7 +172,7 @@ function doorWidth(edge: number) {
 function wallSegments(
   width: number,
   depth: number,
-  door: DoorSide
+  door: PlanSide
 ): WallSegment[] {
   const segments: WallSegment[] = []
   const t = WALL_THICKNESS
@@ -193,6 +223,124 @@ function wallSegments(
   return segments
 }
 
+/** Picks which polygon edge gets the doorway: explicit index, then PlanSide
+ * preference, then the edge closest to the floor centre. */
+function resolveDoorEdge(
+  room: FloorRoom,
+  points: { x: number; z: number }[],
+  center: { x: number; z: number },
+  floorCenterX: number,
+  floorCenterZ: number
+): number {
+  const n = points.length
+  if (n === 0) return 0
+
+  if (room.doorEdge != null) {
+    return ((room.doorEdge % n) + n) % n
+  }
+
+  if (room.door) {
+    let best = 0
+    let bestScore = -Infinity
+    for (let i = 0; i < n; i++) {
+      const a = points[i]
+      const b = points[(i + 1) % n]
+      const mx = (a.x + b.x) / 2
+      const mz = (a.z + b.z) / 2
+      const score =
+        room.door === "north"
+          ? -mz
+          : room.door === "south"
+            ? mz
+            : room.door === "east"
+              ? mx
+              : -mx
+      if (score > bestScore) {
+        bestScore = score
+        best = i
+      }
+    }
+    return best
+  }
+
+  let best = 0
+  let bestDist = Infinity
+  for (let i = 0; i < n; i++) {
+    const a = points[i]
+    const b = points[(i + 1) % n]
+    const mx = center.x + (a.x + b.x) / 2
+    const mz = center.z + (a.z + b.z) / 2
+    const dist =
+      (mx - floorCenterX) * (mx - floorCenterX) +
+      (mz - floorCenterZ) * (mz - floorCenterZ)
+    if (dist < bestDist) {
+      bestDist = dist
+      best = i
+    }
+  }
+  return best
+}
+
+function polygonWallSegments(
+  points: { x: number; z: number }[],
+  doorEdge: number
+): WallSegment[] {
+  const segments: WallSegment[] = []
+  const t = WALL_THICKNESS
+  const y = SLAB_THICKNESS + WALL_HEIGHT / 2
+  const n = points.length
+
+  for (let i = 0; i < n; i++) {
+    const a = points[i]
+    const b = points[(i + 1) % n]
+    const dx = b.x - a.x
+    const dz = b.z - a.z
+    const len = Math.hypot(dx, dz)
+    if (len < 0.5) continue
+
+    const rotY = -Math.atan2(dz, dx)
+    const ux = dx / len
+    const uz = dz / len
+
+    const pushStub = (length: number, along: number) => {
+      segments.push({
+        args: [length, WALL_HEIGHT, t],
+        position: [a.x + ux * along, y, a.z + uz * along],
+        rotation: [0, rotY, 0],
+      })
+    }
+
+    if (i === doorEdge) {
+      const gap = Math.min(doorWidth(len), len * 0.6)
+      const stub = (len - gap) / 2
+      if (stub >= 1) {
+        pushStub(stub, stub / 2)
+        pushStub(stub, len - stub / 2)
+        continue
+      }
+    }
+
+    pushStub(len, len / 2)
+  }
+
+  return segments
+}
+
+function buildPolygonFloorGeometry(points: { x: number; z: number }[]) {
+  const shape = new THREE.Shape()
+  points.forEach((p, i) => {
+    if (i === 0) shape.moveTo(p.x, -p.z)
+    else shape.lineTo(p.x, -p.z)
+  })
+  shape.closePath()
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: SLAB_THICKNESS,
+    bevelEnabled: false,
+  })
+  geometry.rotateX(-Math.PI / 2)
+  return geometry
+}
+
 /** Scales every material in a floor group, keeping each one's own base opacity
  * (the selection highlight planes are translucent to begin with). */
 function setGroupOpacity(group: THREE.Object3D | null, factor: number) {
@@ -222,8 +370,14 @@ function setGroupOpacity(group: THREE.Object3D | null, factor: number) {
  * floor plate follow the actual plan instead of the wider SVG viewBox. */
 function floorBounds(data: FloorData) {
   const viewBoxHeight = data.viewBoxHeight ?? 395
-  const xs = data.kamers.flatMap((r) => [r.x, r.x + r.w])
-  const ys = data.kamers.flatMap((r) => [r.y, r.y + r.h])
+  const xs = data.kamers.flatMap((r) => {
+    const rect = roomRect(r)
+    return [rect.x, rect.x + rect.w]
+  })
+  const ys = data.kamers.flatMap((r) => {
+    const rect = roomRect(r)
+    return [rect.y, rect.y + rect.h]
+  })
   const minX = Math.min(...xs)
   const maxX = Math.max(...xs)
   const minY = Math.min(...ys)
@@ -244,6 +398,7 @@ function RoomMesh({
   floorCenterZ,
   selected,
   labelsVisible,
+  interactive = true,
   onSelect,
 }: {
   room: FloorRoom
@@ -252,17 +407,20 @@ function RoomMesh({
   floorCenterZ: number
   selected: boolean
   labelsVisible: boolean
+  interactive?: boolean
   onSelect: (roomId: string | null) => void
 }) {
   const [hovered, setHovered] = useState(false)
   const { controls } = useThree()
   const cfg = room.colorOverride ?? ROOM_TYPES[room.type]
   const isTrap = room.id.startsWith("_")
-  const clickable = canSelectRoom(room)
+  const clickable = interactive && canSelectRoom(room)
+  const rect = roomRect(room)
   const center = roomCenter(room, viewBoxHeight)
   const { x, z } = center
-  const showLabel = room.w > 45 && room.h > 35
-  const showSubLabel = room.h > 60 && room.type !== "overig" && !isTrap
+  const polygon = roomLocalPolygon(room, viewBoxHeight)
+  const showLabel = interactive && rect.w > 45 && rect.h > 35
+  const showSubLabel = rect.h > 60 && room.type !== "overig" && !isTrap
   const walled = hasWalls(room)
   const stairwell = isStairwell(room)
   const topY = walled || stairwell ? ROOM_HEIGHT : SLAB_THICKNESS
@@ -279,48 +437,96 @@ function RoomMesh({
     if (c && typeof c.enabled === "boolean") c.enabled = enabled
   }
 
-  const door = doorSide(center, floorCenterX, floorCenterZ)
-  const walls = walled ? wallSegments(room.w, room.h, door) : []
-  const steps = stairwell
-    ? stairSteps(room.w, room.h, door, room.stairDirection, walled)
+  const door = room.door ?? doorSide(center, floorCenterX, floorCenterZ)
+  const walls = walled
+    ? polygon
+      ? polygonWallSegments(
+          polygon,
+          resolveDoorEdge(
+            room,
+            polygon,
+            center,
+            floorCenterX,
+            floorCenterZ
+          )
+        )
+      : wallSegments(rect.w, rect.h, door)
     : []
+  const steps = stairwell
+    ? stairSteps(rect.w, rect.h, door, room.stairDirection, walled)
+    : []
+
+  const polygonFloor = useMemo(
+    () => (polygon ? buildPolygonFloorGeometry(polygon) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- rebuild when the room outline changes
+    [room.id, room.points]
+  )
+
+  useEffect(() => {
+    return () => {
+      polygonFloor?.dispose()
+    }
+  }, [polygonFloor])
 
   return (
     <group
       position={[x, 0, z]}
-      onClick={(e) => {
-        e.stopPropagation()
-        if (!clickable) return
-        onSelect(selected ? null : room.id)
-      }}
-      onPointerOver={(e) => {
-        e.stopPropagation()
-        if (!clickable) return
-        setHovered(true)
-        setControlsEnabled(false)
-        document.body.style.cursor = "pointer"
-      }}
-      onPointerOut={() => {
-        setHovered(false)
-        setControlsEnabled(true)
-        document.body.style.cursor = "auto"
-      }}
+      onClick={
+        clickable
+          ? (e) => {
+              e.stopPropagation()
+              onSelect(selected ? null : room.id)
+            }
+          : undefined
+      }
+      onPointerOver={
+        clickable
+          ? (e) => {
+              e.stopPropagation()
+              setHovered(true)
+              setControlsEnabled(false)
+              document.body.style.cursor = "pointer"
+            }
+          : undefined
+      }
+      onPointerOut={
+        clickable
+          ? () => {
+              setHovered(false)
+              setControlsEnabled(true)
+              document.body.style.cursor = "auto"
+            }
+          : undefined
+      }
     >
-      <mesh position={[0, SLAB_THICKNESS / 2, 0]} receiveShadow>
-        <boxGeometry args={[room.w, SLAB_THICKNESS, room.h]} />
-        <meshStandardMaterial
-          color={floorColor}
-          roughness={0.55}
-          metalness={0.05}
-          emissive={glow ? cfg.stroke : "#000000"}
-          emissiveIntensity={glow ? 0.18 : 0}
-        />
-      </mesh>
+      {polygonFloor ? (
+        <mesh geometry={polygonFloor} receiveShadow>
+          <meshStandardMaterial
+            color={floorColor}
+            roughness={0.55}
+            metalness={0.05}
+            emissive={glow ? cfg.stroke : "#000000"}
+            emissiveIntensity={glow ? 0.18 : 0}
+          />
+        </mesh>
+      ) : (
+        <mesh position={[0, SLAB_THICKNESS / 2, 0]} receiveShadow>
+          <boxGeometry args={[rect.w, SLAB_THICKNESS, rect.h]} />
+          <meshStandardMaterial
+            color={floorColor}
+            roughness={0.55}
+            metalness={0.05}
+            emissive={glow ? cfg.stroke : "#000000"}
+            emissiveIntensity={glow ? 0.18 : 0}
+          />
+        </mesh>
+      )}
 
       {walls.map((wall, i) => (
         <mesh
           key={`wall-${i}`}
           position={wall.position}
+          rotation={wall.rotation ?? [0, 0, 0]}
           castShadow
           receiveShadow
           userData={{ castsShadow: true }}
@@ -356,7 +562,7 @@ function RoomMesh({
       ))}
 
       {clickable && room.beschikbaar !== undefined && (
-        <mesh position={[room.w / 2 - 8, topY + 1.2, -room.h / 2 + 8]}>
+        <mesh position={[rect.w / 2 - 8, topY + 1.2, -rect.h / 2 + 8]}>
           <sphereGeometry args={[3.2, 12, 12]} />
           <meshStandardMaterial
             color={room.beschikbaar ? "#10B981" : "#EF4444"}
@@ -388,7 +594,7 @@ function RoomMesh({
                 fontSize: 9,
                 fontWeight: 600,
                 pointerEvents: "none",
-                transform: room.h > room.w ? "rotate(-90deg)" : undefined,
+                transform: rect.h > rect.w ? "rotate(-90deg)" : undefined,
               }}
             >
               TRAP
@@ -406,13 +612,14 @@ function RoomMesh({
                 border: "none",
                 padding: 4,
                 cursor: clickable ? "pointer" : "default",
-                pointerEvents: clickable ? "auto" : "none",
+                pointerEvents:
+                  clickable && labelsVisible ? "auto" : "none",
               }}
             >
               <div
                 style={{
                   color: labelColor,
-                  fontSize: room.w > 120 ? 12 : 10,
+                  fontSize: rect.w > 120 ? 12 : 10,
                   fontWeight: 700,
                 }}
               >
@@ -445,6 +652,7 @@ function FloorSlab({
   selectedRoom,
   labelsVisible,
   initialOpacity,
+  interactive = true,
   onSelectRoom,
   groupRef,
 }: {
@@ -452,6 +660,7 @@ function FloorSlab({
   selectedRoom: string | null
   labelsVisible: boolean
   initialOpacity: number
+  interactive?: boolean
   onSelectRoom: (roomId: string | null) => void
   groupRef?: RefObject<THREE.Group | null>
 }) {
@@ -498,6 +707,7 @@ function FloorSlab({
           floorCenterZ={bounds.centerZ}
           selected={selectedRoom === room.id}
           labelsVisible={labelsVisible}
+          interactive={interactive}
           onSelect={onSelectRoom}
         />
       ))}
@@ -598,7 +808,12 @@ function startTransition(
   setIncomingFloor(to)
 }
 
-function Scene({ floor, selectedRoom, onSelectRoom }: FloorMap3DProps) {
+function Scene({
+  floor,
+  selectedRoom,
+  onSelectRoom,
+  preview = false,
+}: FloorMap3DProps) {
   const [baseFloor, setBaseFloor] = useState(floor)
   const [incomingFloor, setIncomingFloor] = useState<number | null>(null)
   const [labelsVisible, setLabelsVisible] = useState(false)
@@ -627,13 +842,17 @@ function Scene({ floor, selectedRoom, onSelectRoom }: FloorMap3DProps) {
   }
 
   useEffect(() => {
+    if (preview) {
+      hideLabels()
+      return
+    }
     revealLabels()
     return () => {
       if (labelFadeRef.current !== null) {
         cancelAnimationFrame(labelFadeRef.current)
       }
     }
-  }, [])
+  }, [preview])
 
   useEffect(() => {
     if (floor === baseFloor && !animRef.current) return
@@ -644,9 +863,9 @@ function Scene({ floor, selectedRoom, onSelectRoom }: FloorMap3DProps) {
       return
     }
 
-    hideLabels()
+    if (!preview) hideLabels()
     startTransition(floor, setIncomingFloor, animRef)
-  }, [floor, baseFloor])
+  }, [floor, baseFloor, preview])
 
   useFrame((_, delta) => {
     const anim = animRef.current
@@ -677,7 +896,7 @@ function Scene({ floor, selectedRoom, onSelectRoom }: FloorMap3DProps) {
       startTransition(queued, setIncomingFloor, animRef)
     } else {
       setIncomingFloor(null)
-      revealLabels()
+      if (!preview) revealLabels()
     }
   })
 
@@ -702,10 +921,11 @@ function Scene({ floor, selectedRoom, onSelectRoom }: FloorMap3DProps) {
       <FloorSlab
         key={`base-${baseFloor}`}
         data={baseData}
-        selectedRoom={incomingFloor !== null ? null : selectedRoom}
-        labelsVisible={labelsVisible}
+        selectedRoom={incomingFloor !== null || preview ? null : selectedRoom}
+        labelsVisible={preview ? false : labelsVisible}
         initialOpacity={1}
-        onSelectRoom={onSelectRoom}
+        interactive={!preview}
+        onSelectRoom={preview ? () => {} : onSelectRoom}
         groupRef={outgoingRef}
       />
 
@@ -716,7 +936,8 @@ function Scene({ floor, selectedRoom, onSelectRoom }: FloorMap3DProps) {
           selectedRoom={null}
           labelsVisible={false}
           initialOpacity={0}
-          onSelectRoom={onSelectRoom}
+          interactive={!preview}
+          onSelectRoom={preview ? () => {} : onSelectRoom}
           groupRef={incomingRef}
         />
       )}
@@ -735,8 +956,10 @@ function Scene({ floor, selectedRoom, onSelectRoom }: FloorMap3DProps) {
         enableDamping
         dampingFactor={0.08}
         enableRotate={false}
-        enablePan
-        enableZoom
+        enablePan={!preview}
+        enableZoom={!preview}
+        autoRotate={preview}
+        autoRotateSpeed={0.45}
         /* Keep the CameraFit pitch locked — drag must never tilt. */
         minPolarAngle={CAMERA_POLAR}
         maxPolarAngle={CAMERA_POLAR}
@@ -765,9 +988,14 @@ export default function FloorMap3D({
   floor,
   selectedRoom,
   onSelectRoom,
+  preview = false,
 }: FloorMap3DProps) {
   return (
-    <div className="floor-map-3d h-full w-full overflow-hidden rounded-xl bg-slate-100">
+    <div
+      className={`floor-map-3d h-full w-full overflow-hidden rounded-xl bg-slate-100 ${
+        preview ? "pointer-events-none" : ""
+      }`}
+    >
       <Canvas
         shadows
         camera={{
@@ -789,6 +1017,7 @@ export default function FloorMap3D({
           floor={floor}
           selectedRoom={selectedRoom}
           onSelectRoom={onSelectRoom}
+          preview={preview}
         />
       </Canvas>
     </div>

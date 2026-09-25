@@ -11,8 +11,8 @@ export function HulplijnenSection() {
         {supportContacts.map((contact) => (
           <Card
             key={contact.id}
-            className="border-l-4 transition-shadow hover:shadow-md"
-            style={{ borderColor: contact.color }}
+            className="border-l-4"
+            style={{ borderLeftColor: contact.color }}
           >
             <CardContent className="p-5">
               <div className="flex items-start gap-4">

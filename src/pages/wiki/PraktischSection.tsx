@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export function PraktischSection() {
   return (
     <div className="space-y-4 pt-4">
-      <Card className="border-l-4 border-l-green-500 transition-shadow hover:shadow-md">
+      <Card className="border-l-4 border-l-green-500">
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
