@@ -3,11 +3,11 @@ import {
   ArrowRight,
   BookOpen,
   Calendar,
-  CheckCircle2,
   ExternalLink,
   FileText,
   GraduationCap,
   LifeBuoy,
+  Mail,
   MapPin,
   Star,
   Video,
@@ -45,12 +45,20 @@ const primarySystems = [
     url: Urls.myx,
   },
   {
-    id: "teams-outlook",
-    name: "Teams & Outlook",
+    id: "teams",
+    name: "Teams",
     icon: <Video size={18} />,
     color: "#5264B2",
     bg: "#EEF0FB",
     url: Urls.teams,
+  },
+  {
+    id: "outlook",
+    name: "Outlook",
+    icon: <Mail size={18} />,
+    color: "#0078D4",
+    bg: "#E5F2FB",
+    url: Urls.outlook,
   },
   {
     id: "isas",
@@ -59,14 +67,6 @@ const primarySystems = [
     color: "#2E7D32",
     bg: "#E8F5E9",
     url: Urls.isas,
-  },
-  {
-    id: "ans",
-    name: "ANS",
-    icon: <CheckCircle2 size={18} />,
-    color: "#6A1B9A",
-    bg: "#F3E5F5",
-    url: Urls.ans,
   },
 ];
 
@@ -108,7 +108,7 @@ export function Home({ onNavigate }: { onNavigate: (page: Page) => void }) {
               HAN-systemen
             </h2>
             <p className="mt-0.5 text-sm text-slate-500">
-              Direct toegang tot alle officiële digitale tools.
+              Veelgebruikte schoolsoftware en websites.
             </p>
           </div>
           <button

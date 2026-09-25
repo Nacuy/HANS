@@ -59,7 +59,8 @@ export function Topbar({ active, onNavigate }: TopbarProps) {
           ))}
         </nav>
 
-        <div className="relative ml-auto shrink-0 hidden md:block">
+        <div className="relative ml-auto hidden shrink-0 items-center gap-3 md:flex">
+          <IssueNote variant="bar" />
           <button
             onClick={() => setUpdatesOpen((open) => !open)}
             aria-expanded={updatesOpen}
@@ -92,6 +93,7 @@ export function Topbar({ active, onNavigate }: TopbarProps) {
                 </span>
               </div>
               <UpdatesList />
+              <IssueNote variant="panel" />
             </div>
           )}
         </div>
@@ -142,11 +144,57 @@ export function Topbar({ active, onNavigate }: TopbarProps) {
                 </span>
               </div>
               <UpdatesList />
+              <IssueNote variant="panel" />
             </div>
           </div>
         </>
       )}
     </header>
+  );
+}
+
+const ISSUE_BOARD_URL = "https://github.com/Nacuy/HANS/issues";
+
+function IssueNote({ variant }: { variant: "bar" | "panel" }) {
+  if (variant === "bar") {
+    return (
+      <a
+        href={ISSUE_BOARD_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="hidden max-w-[11.5rem] text-right font-poppins text-[11px] font-medium leading-snug text-white/85 transition-colors hover:text-white lg:block"
+      >
+        <span className="block">Probleem of suggestie?</span>
+        <span className="mt-0.5 block underline decoration-white/50 underline-offset-2">
+          github.com/Nacuy/HANS
+        </span>
+      </a>
+    );
+  }
+
+  return (
+    <p className="border-t border-slate-100 bg-slate-50 px-4 py-3 text-xs leading-relaxed text-slate-500">
+      Kom je een probleem tegen of heb je een suggestie? Schrijf het gerust op
+      het{" "}
+      <a
+        href={ISSUE_BOARD_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-semibold text-indigo-600 underline-offset-2 hover:underline"
+      >
+        GitHub issue board
+      </a>{" "}
+      (
+      <a
+        href={ISSUE_BOARD_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-indigo-600 underline-offset-2 hover:underline"
+      >
+        https://github.com/Nacuy/HANS
+      </a>
+      ).
+    </p>
   );
 }
 
